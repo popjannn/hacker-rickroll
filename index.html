@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Connecting...</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: black;
+      font-family: monospace;
+      color: #00ff88;
+      overflow: hidden;
+      transition: background 0.3s;
+    }
+
+    .matrix {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    .terminal {
+      position: relative;
+      z-index: 1;
+      padding: 20px;
+      width: 700px;
+      max-width: 90%;
+      margin: 50px auto;
+      background: rgba(0,0,0,0.8);
+      border-radius: 8px;
+      box-shadow: 0 0 20px #00ff88;
+      height: 350px;
+      overflow: hidden;
+      transition: color 0.1s, background 0.1s;
+    }
+
+    .line {
+      white-space: nowrap;
+      overflow: hidden;
+      border-right: 2px solid #00ff88;
+      animation: blink 0.8s infinite;
+    }
+
+    @keyframes blink {
+      50% { border-color: transparent; }
+    }
+
+    .alert {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      font-size: 26px;
+      color: red;
+      margin-top: 20px;
+      opacity: 0;
+      transition: opacity 0.1s ease;
+    }
+
+    .warning-flash {
+      position: absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background: red;
+      opacity: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .progress-container {
+      position: relative;
+      width: 90%;
+      height: 20px;
+      background: rgba(0,255,136,0.2);
+      margin: 20px auto 0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #00ff88;
+      transition: width 0.05s;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas class="matrix" id="matrix"></canvas>
+
+  <div class="terminal" id="terminal"></div>
+  <div class="progress-container">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+  <div class="alert" id="alert">
+    ⚠ LOCATION TRACE SIMULATION COMPLETE<br>
+    IP LOCKED — ACCESS VERIFIED
+  </div>
+  <div class="warning-flash" id="flash"></div>
+
+  <!-- Audio -->
+  <audio id="static" preload="auto">
+    <source src="https://freesound.org/data/previews/341/341695_3248244-lq.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Multiple error sounds -->
+  <audio id="error1" preload="auto">
+    <source src="https://freesound.org/data/previews/269/269719_5121236-lq.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="error2" preload="auto">
+    <source src="https://freesound.org/data/previews/256/256113_4486188-lq.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="error3" preload="auto">
+    <source src="https://freesound.org/data/previews/65/65781_634166-lq.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const terminal = document.getElementById("terminal");
+    const alertBox = document.getElementById("alert");
+    const flash = document.getElementById("flash");
+    const progressBar = document.getElementById("progress-bar");
+
+    const staticAudio = document.getElementById("static");
+    const errors = [
+      document.getElementById("error1"),
+      document.getElementById("error2"),
+      document.getElementById("error3")
+    ];
+
+    // ---- Matrix Background ----
+    const canvas = document.getElementById("matrix");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(0);
+
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(0,0,0,0.1)';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#0F0';
+      ctx.font = fontSize + "px monospace";
+
+      for(let i=0;i<drops.length;i++){
+        const text = letters[Math.floor(Math.random()*letters.length)];
+        ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+        if(drops[i]*fontSize>canvas.height || Math.random()>0.975) drops[i]=0;
+        drops[i]++;
+      }
+    }
+    setInterval(drawMatrix,50);
+
+    // ---- Terminal typing with glitch & flicker ----
+    function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+    function randomIP(){return `${rand(10,255)}.${rand(0,255)}.${rand(0,255)}.${rand(1,254)}`;}
+
+    const lines=[
+      "Initializing secure protocol...",
+      "Locating remote host...",
+      `Target IP detected: ${randomIP()}`,
+      `Routing through node ${randomIP()}...`,
+      `Opening secure port ${rand(1024,65535)}...`,
+      "Establishing encrypted tunnel...",
+      "Decrypting packets...",
+      "Bypassing firewall...",
+      "Syncing session keys...",
+      "Finalizing handshake..."
+    ];
+
+    function glitchLine(lineElement){
+      const original = lineElement.textContent;
+      const chars = original.split('');
+      const glitchCount = Math.floor(chars.length*0.3);
+      for(let i=0;i<glitchCount;i++){
+        const idx = rand(0,chars.length-1);
+        chars[idx] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.charAt(rand(0,35));
+      }
+      lineElement.textContent = chars.join('');
+
+      // Flicker: random color shift
+      if(Math.random()<0.3){
+        lineElement.style.color = `rgb(${rand(0,255)},${rand(0,255)},${rand(0,255)})`;
+      } else {
+        lineElement.style.color = "#00ff88";
+      }
+    }
+
+    function typeLine(text,callback){
+      const line=document.createElement("div");
+      line.classList.add("line");
+      terminal.appendChild(line);
+      let i=0;
+      const interval=setInterval(()=>{
+        line.textContent+=text[i];
+        i++;
+        if(i>=text.length){
+          clearInterval(interval);
+          line.style.borderRight="none";
+
+          let glitchTimes=0;
+          const glitchInterval=setInterval(()=>{
+            glitchLine(line);
+            glitchTimes++;
+            if(glitchTimes>5){
+              clearInterval(glitchInterval);
+              line.textContent=text;
+              line.style.color="#00ff88";
+              callback();
+            }
+          },80);
+        }
+      },35);
+    }
+
+    // ---- Progress bar + terminal glitch + layered errors ----
+    function fillProgressBar(callback){
+      let width=0;
+      const interval=setInterval(()=>{
+        width+=rand(2,5);
+        if(width>100) width=100;
+        progressBar.style.width=width+"%";
+
+        // Terminal glitch + flicker all lines
+        terminal.querySelectorAll(".line").forEach(line=>{
+          if(Math.random()<0.3) glitchLine(line);
+        });
+
+        // Layered error sounds
+        if(Math.random()<0.3){
+          const e1=errors[rand(0,errors.length-1)];
+          const e2=errors[rand(0,errors.length-1)];
+          e1.currentTime=0; e2.currentTime=0;
+          e1.play(); e2.play();
+        }
+
+        if(width>=100){
+          clearInterval(interval);
+          callback();
+        }
+      },120);
+    }
+
+    function startTyping(index){
+      if(index<lines.length){
+        typeLine(lines[index],()=>startTyping(index+1));
+      } else {
+        setTimeout(()=>{
+          document.body.style.background="#200000";
+          alertBox.style.opacity="1";
+
+          let flashes=0;
+          const flashInterval=setInterval(()=>{
+            flash.style.opacity = flash.style.opacity==0 ? 0.7 : 0;
+            flashes++;
+            if(flashes>6) clearInterval(flashInterval);
+            staticAudio.play();
+          },200);
+
+          fillProgressBar(()=>{
+            window.location.href="https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+          });
+
+        },500);
+      }
+    }
+
+    startTyping(0);
+
+    window.addEventListener('resize',()=>{
+      canvas.width=window.innerWidth;
+      canvas.height=window.innerHeight;
+    });
+  </script>
+</body>
+</html>
